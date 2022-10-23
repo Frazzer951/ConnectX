@@ -1,5 +1,7 @@
 use macroquad::prelude::*;
 
+const DEBUG: bool = true;
+
 fn window_conf() -> Conf {
     Conf {
         window_title: "Connect X".to_owned(),
@@ -8,45 +10,58 @@ fn window_conf() -> Conf {
     }
 }
 
-fn draw_primitives() {
-    draw_line(40.0, 40.0, 100.0, 200.0, 15.0, BLUE);
-    draw_rectangle(screen_width() / 2.0 - 60.0, 100.0, 120.0, 60.0, GREEN);
-    draw_circle(screen_width() - 30.0, screen_height() - 30.0, 15.0, YELLOW);
+fn ui_number_drag(ui: &mut egui::Ui, val: &mut i32, text: &str) {
+    ui.columns(2, |columns| {
+        columns[0].label(text);
+        columns[1].add(egui::DragValue::new(val));
+    });
+}
 
-    draw_text("IT WORKS!", 20.0, 20.0, 30.0, DARKGRAY);
+fn draw_squares(size: f32, rows: i32, cols: i32) {
+    for i in 0..rows {
+        for j in 0..cols {
+            draw_rectangle(
+                j as f32 * size,
+                i as f32 * size,
+                size - 1.0,
+                size - 1.0,
+                GRAY,
+            );
+        }
+    }
 }
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let num_rows = &mut 1;
+    let mut rows: i32 = 6;
+    let mut cols: i32 = 7;
+    let mut x_val: i32 = 4;
 
     loop {
+        let width: f32 = screen_width();
+        let height: f32 = screen_height();
+        let square_size = (width / cols as f32).min(height / rows as f32);
+
         clear_background(WHITE);
 
         egui_macroquad::ui(|egui_ctx| {
-            egui::Window::new("Settings").show(egui_ctx, |ui| {
-                ui.add(egui::Slider::new(num_rows, 1..=10).text("Number of Rows"));
+            egui::Window::new("Settings")
+                .default_size([1.0, 1.0])
+                .show(egui_ctx, |ui| {
+                    if DEBUG {
+                        ui.label(format!("Width: {}", width));
+                        ui.label(format!("Height: {}", height));
+                        ui.label(format!("Square Size: {}", square_size));
+                        ui.add(egui::Separator::default());
+                    }
 
-                ui.horizontal(|ui| {
-                    if ui.button("-").clicked() {
-                        *num_rows -= 1;
-                    }
-                    ui.label(num_rows.to_string());
-                    if ui.button("+").clicked() {
-                        *num_rows += 1;
-                    }
+                    ui_number_drag(ui, &mut rows, "Rows:");
+                    ui_number_drag(ui, &mut cols, "Cols:");
+                    ui_number_drag(ui, &mut x_val, "X Val:");
                 });
-            });
         });
 
-        draw_primitives();
-        draw_text(
-            format!("Num Rows: {}", num_rows).as_str(),
-            500.0,
-            500.0,
-            30.0,
-            DARKGRAY,
-        );
+        draw_squares(square_size, rows, cols);
 
         egui_macroquad::draw();
 
