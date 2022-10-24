@@ -27,7 +27,7 @@ async fn main() {
     let mut cols: usize = 7;
     let mut x_val: usize = 4;
 
-    let mut board = Board::new(rows, cols, LEFT_BUFFER);
+    let mut board = Board::new(rows, cols);
 
     board.place(0, Pieces::P1);
     board.place(0, Pieces::P1);
@@ -40,7 +40,7 @@ async fn main() {
         let height: f32 = screen_height();
         let square_size = (width_adj / cols as f32).min(height / rows as f32);
 
-        board.verify(rows, cols);
+        board.verify(rows, cols, LEFT_BUFFER, square_size);
 
         clear_background(WHITE);
 
@@ -85,7 +85,7 @@ async fn main() {
                 });
         });
 
-        board.draw(square_size);
+        board.draw();
 
         egui_macroquad::draw();
 
