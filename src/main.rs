@@ -45,21 +45,22 @@ async fn main() {
         clear_background(WHITE);
 
         egui_macroquad::ui(|egui_ctx| {
-            let mut settings_height = 0.0;
+            let mut settings_height = 45.0;
             egui::Window::new("Settings")
                 .default_size([185.0, 1.0])
                 .anchor(egui::Align2::LEFT_TOP, [0.0, 0.0])
+                .enabled(true)
                 .show(egui_ctx, |ui| {
                     let size = ui.available_size();
                     settings_height = size[1] + 45.0;
 
                     if DEBUG {
-                        ui.label(format!("Width: {}", width));
-                        ui.label(format!("Width Adj: {}", width_adj));
-                        ui.label(format!("Height: {}", height));
-                        ui.label(format!("Square Size: {}", square_size));
+                        ui.label(format!("Width: {width}"));
+                        ui.label(format!("Width Adj: {width_adj}"));
+                        ui.label(format!("Height: {height}"));
+                        ui.label(format!("Square Size: {square_size}"));
 
-                        ui.label(format!("Window Size: {:?}", size));
+                        ui.label(format!("Window Size: {size:?}"));
                         ui.add(egui::Separator::default());
                     }
 
@@ -73,13 +74,13 @@ async fn main() {
                 .anchor(egui::Align2::LEFT_TOP, [0.0, settings_height])
                 .show(egui_ctx, |ui| {
                     if DEBUG {
-                        ui.label(format!("Width: {}", width));
-                        ui.label(format!("Width Adj: {}", width_adj));
-                        ui.label(format!("Height: {}", height));
-                        ui.label(format!("Square Size: {}", square_size));
+                        ui.label(format!("Width: {width}"));
+                        ui.label(format!("Width Adj: {width_adj}"));
+                        ui.label(format!("Height: {height}"));
+                        ui.label(format!("Square Size: {square_size}"));
 
                         ui.label(format!("Window Size: {:?}", ui.available_size()));
-                        ui.label(format!("Settings Height: {}", settings_height));
+                        ui.label(format!("Settings Height: {settings_height}"));
                         ui.add(egui::Separator::default());
                     }
                 });
