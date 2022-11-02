@@ -10,7 +10,6 @@ copy :
 
 download :
 	wget -nc https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js -P ./web/ \
-	wget -nc https://raw.githubusercontent.com/gamma-delta/quad-wasmnastics/main/js/wasmnastics.js -P ./web/ \
 	wget -nc https://raw.githubusercontent.com/optozorax/quad-url/master/js/quad-url.js -P ./web/ \
 	wget -nc https://raw.githubusercontent.com/not-fl3/sapp-jsutils/master/js/sapp_jsutils.js -P ./web/ \
 
