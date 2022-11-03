@@ -7,6 +7,11 @@ pub enum Pieces {
     Empty,
 }
 
+const P1_COLOR: Color = Color::new(0.90, 0.16, 0.22, 1.00);
+const P1_COLOR_TRANS: Color = Color::new(0.90, 0.16, 0.22, 0.50);
+const P2_COLOR: Color = Color::new(0.99, 0.98, 0.00, 1.00);
+const P2_COLOR_TRANS: Color = Color::new(0.99, 0.98, 0.00, 0.50);
+
 pub struct Board {
     rows: usize,
     cols: usize,
@@ -53,6 +58,27 @@ impl Board {
         }
     }
 
+    pub fn mouse_hover(&self, psn: (f32, f32), player: bool) -> Option<usize> {
+        let x = psn.0 - self.left_buffer;
+        if x < 0.0 || x > self.cols as f32 * self.piece_size {
+            return None;
+        }
+
+        let col = (x / self.piece_size) as usize;
+
+        let x_pos = self.left_buffer + col as f32 * self.piece_size;
+        let height = self.rows as f32 * self.piece_size;
+        let color = if player {
+            P2_COLOR_TRANS
+        } else {
+            P1_COLOR_TRANS
+        };
+
+        draw_rectangle(x_pos, 0.0, self.piece_size, height, color);
+
+        Some(col)
+    }
+
     pub fn draw(&self) {
         for i in 0..self.rows {
             for j in 0..self.cols {
@@ -63,8 +89,8 @@ impl Board {
                 x += self.piece_size / 2.0;
                 y += self.piece_size / 2.0;
                 match self.board[i][j] {
-                    Pieces::P1 => draw_circle(x, y, self.piece_size / 2.5, RED),
-                    Pieces::P2 => draw_circle(x, y, self.piece_size / 2.5, YELLOW),
+                    Pieces::P1 => draw_circle(x, y, self.piece_size / 2.5, P1_COLOR),
+                    Pieces::P2 => draw_circle(x, y, self.piece_size / 2.5, P2_COLOR),
                     Pieces::Empty => draw_circle(x, y, self.piece_size / 2.5, WHITE),
                 }
             }

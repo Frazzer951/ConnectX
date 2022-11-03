@@ -2,7 +2,7 @@ mod agent;
 mod board;
 mod ui;
 
-use agent::Agent;
+use agent::{player_turn, Agent};
 use board::{Board, Pieces};
 use macroquad::prelude::*;
 
@@ -32,6 +32,8 @@ async fn main() {
     let mut board = Board::new(rows, cols);
     let mut running: bool = false;
     let mut current_turn: bool = false;
+
+    let mut selected_move: Option<usize> = None;
 
     board.place(0, Pieces::P1);
     board.place(0, Pieces::P2);
@@ -95,6 +97,12 @@ async fn main() {
                 .anchor(egui::Align2::LEFT_TOP, [0.0, settings_height])
                 .resizable(false)
                 .show(egui_ctx, |ui| {
+                    if DEBUG {
+                        ui.label(format!("Chosen Move: {selected_move:?}"));
+
+                        ui.separator();
+                    }
+
                     if current_turn {
                         ui.label("Current Turn: Player 2");
                     } else {
@@ -114,19 +122,27 @@ async fn main() {
                 });
         });
 
+        board.draw();
+
         if !current_turn {
             // Player 1
-            match player_one {
-                Agent::Player => {}
+            let chosen_move = match player_one {
+                Agent::Player => player_turn(&board, current_turn),
+            };
+            if chosen_move.is_some() {
+                selected_move = chosen_move;
+
+
             };
         } else {
             // Player 2
-            match player_two {
-                Agent::Player => {}
+            let chosen_move = match player_two {
+                Agent::Player => player_turn(&board, current_turn),
             };
-        }
-
-        board.draw();
+            if chosen_move.is_some() {
+                selected_move = chosen_move;
+            };
+        };
 
         egui_macroquad::draw();
 
