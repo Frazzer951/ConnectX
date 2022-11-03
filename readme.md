@@ -1,8 +1,14 @@
-# macroquad_test
+# Connect X
 
-https://docs.rs/egui/0.19.0/egui/index.html
+A connect-4 variant where the board can be any size and the amount you need in a row is also a variable
 
 ## TODO
-- Select Agents for player 1 and player 2
-- Start Button that locks settings until game is finished
-- Display game result i.e. P1 Win, P2 Win, Tie
+
+- Implement more agents
+- Make it look good
+
+## Resources
+
+[eGui](https://docs.rs/egui/0.19.0/egui/index.html)
+
+[macroquad](https://docs.rs/macroquad/latest/macroquad/index.html)
