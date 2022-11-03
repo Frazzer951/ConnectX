@@ -7,6 +7,14 @@ pub enum Pieces {
     Empty,
 }
 
+#[derive(Debug)]
+pub enum GameState {
+    OnGoing,
+    P1Win,
+    P2Win,
+    Tie,
+}
+
 const P1_COLOR: Color = Color::new(0.90, 0.16, 0.22, 1.00);
 const P1_COLOR_TRANS: Color = Color::new(0.90, 0.16, 0.22, 0.50);
 const P2_COLOR: Color = Color::new(0.99, 0.98, 0.00, 1.00);
@@ -15,6 +23,7 @@ const P2_COLOR_TRANS: Color = Color::new(0.99, 0.98, 0.00, 0.50);
 pub struct Board {
     rows: usize,
     cols: usize,
+    x_to_win: usize,
     board: Vec<Vec<Pieces>>,
     left_buffer: f32,
     piece_size: f32,
@@ -25,17 +34,28 @@ impl Board {
         Board {
             rows,
             cols,
+            x_to_win: 0,
             board: vec![vec![Pieces::Empty; cols]; rows],
             left_buffer: 0.0,
             piece_size: 0.0,
         }
     }
 
-    pub fn verify(&mut self, rows: usize, cols: usize, left_buffer: f32, piece_size: f32) {
+    pub fn verify(
+        &mut self,
+        rows: usize,
+        cols: usize,
+        x_to_win: usize,
+        left_buffer: f32,
+        piece_size: f32,
+    ) {
         if self.rows != rows || self.cols != cols {
             self.rows = rows;
             self.cols = cols;
             self.board = vec![vec![Pieces::Empty; cols]; rows]
+        }
+        if self.x_to_win != x_to_win {
+            self.x_to_win = x_to_win;
         }
         if self.left_buffer != left_buffer {
             self.left_buffer = left_buffer;
@@ -96,5 +116,110 @@ impl Board {
                 }
             }
         }
+    }
+
+    pub fn game_state(&self) -> GameState {
+        let mut full = true;
+
+        // Check if top row is filled
+        for col in 0..self.cols {
+            if self.board[0][col] == Pieces::Empty {
+                full = false;
+                break;
+            }
+        }
+
+        // Check all diagonal and cardinal direction
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                let cur_piece = self.board[i][j];
+                if cur_piece == Pieces::Empty {
+                    continue;
+                }
+
+                // Check right
+                if j + self.x_to_win <= self.cols {
+                    let mut count = 1;
+                    for col in j + 1..self.cols {
+                        if self.board[i][col] == cur_piece {
+                            count += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    if count >= self.x_to_win {
+                        return if cur_piece == Pieces::P1 {
+                            GameState::P1Win
+                        } else {
+                            GameState::P2Win
+                        };
+                    }
+                }
+
+                // Check down
+                if i + self.x_to_win <= self.rows {
+                    let mut count = 1;
+                    for row in i + 1..self.rows {
+                        if self.board[row][j] == cur_piece {
+                            count += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    if count >= self.x_to_win {
+                        return if cur_piece == Pieces::P1 {
+                            GameState::P1Win
+                        } else {
+                            GameState::P2Win
+                        };
+                    }
+                }
+
+                // Check up diagonal
+                if i as i32 - self.x_to_win as i32 >= -1 && j + self.x_to_win <= self.cols {
+                    let mut count = 1;
+                    for offset in 1..self.x_to_win {
+                        if self.board[i - offset][j + offset] == cur_piece {
+                            count += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    if count >= self.x_to_win {
+                        return if cur_piece == Pieces::P1 {
+                            GameState::P1Win
+                        } else {
+                            GameState::P2Win
+                        };
+                    }
+                }
+                // Check down diagonal
+                if i + self.x_to_win <= self.rows && j + self.x_to_win <= self.cols {
+                    let mut count = 1;
+                    for offset in 1..self.x_to_win {
+                        if self.board[i + offset][j + offset] == cur_piece {
+                            count += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    if count >= self.x_to_win {
+                        return if cur_piece == Pieces::P1 {
+                            GameState::P1Win
+                        } else {
+                            GameState::P2Win
+                        };
+                    }
+                }
+            }
+        }
+
+        // If board is full and no one has won, then its a tie
+        if full {
+            return GameState::Tie;
+        }
+
+        // Game is still going
+        GameState::OnGoing
     }
 }

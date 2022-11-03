@@ -3,7 +3,7 @@ mod board;
 mod ui;
 
 use agent::{player_turn, Agent};
-use board::{Board, Pieces};
+use board::{Board, GameState, Pieces};
 use macroquad::prelude::*;
 
 const DEBUG: bool = true;
@@ -32,6 +32,7 @@ async fn main() {
     let mut board = Board::new(rows, cols);
     let mut running: bool = false;
     let mut current_turn: bool = false;
+    let mut gamestate = GameState::OnGoing;
 
     let mut selected_move: Option<usize> = None;
 
@@ -46,7 +47,7 @@ async fn main() {
 
         let max_x = rows.min(cols);
 
-        board.verify(rows, cols, LEFT_BUFFER, square_size);
+        board.verify(rows, cols, x_val, LEFT_BUFFER, square_size);
 
         clear_background(WHITE);
 
@@ -109,6 +110,8 @@ async fn main() {
                         ui.label("Current Turn: Player 1");
                     }
 
+                    ui.label(format!("GameState: {gamestate:?}"));
+
                     ui.separator();
 
                     ui.centered_and_justified(|ui| {
@@ -150,6 +153,13 @@ async fn main() {
                     }
                 };
             };
+
+            gamestate = board.game_state();
+
+            match gamestate {
+                GameState::Tie | GameState::P1Win | GameState::P2Win => running = false,
+                GameState::OnGoing => {}
+            }
         }
 
         egui_macroquad::draw();
