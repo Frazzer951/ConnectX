@@ -30,11 +30,11 @@ async fn main() {
     let mut player_two = Agent::Player;
 
     let mut board = Board::new(rows, cols);
+    let mut running: bool = false;
+    let mut current_turn: bool = false;
 
     board.place(0, Pieces::P1);
-    board.place(0, Pieces::P1);
-    board.place(0, Pieces::P1);
-    board.place(1, Pieces::P2);
+    board.place(0, Pieces::P2);
 
     loop {
         let width: f32 = screen_width();
@@ -55,7 +55,7 @@ async fn main() {
                 .default_size([WINDOW_WIDTH, 1.0])
                 .anchor(egui::Align2::LEFT_TOP, [0.0, 0.0])
                 .resizable(false)
-                .enabled(true)
+                .enabled(!running)
                 .show(egui_ctx, |ui| {
                     let size = ui.available_size();
                     settings_height = size[1] + 45.0;
@@ -69,7 +69,7 @@ async fn main() {
                         ui.label(format!("Max X: {max_x}"));
 
                         ui.label(format!("Window Size: {size:?}"));
-                        ui.add(egui::Separator::default());
+                        ui.separator();
                     }
 
                     ui::number_drag(ui, &mut rows, "Rows:", 1..=MAX_ROW);
@@ -78,6 +78,16 @@ async fn main() {
 
                     ui::agent_selector(ui, "Player 1", &mut player_one);
                     ui::agent_selector(ui, "Player 2", &mut player_two);
+
+                    ui.separator();
+
+                    ui.centered_and_justified(|ui| {
+                        if ui.button("Start").clicked() {
+                            running = true;
+                            current_turn = false;
+                            board.reset();
+                        }
+                    });
                 });
 
             egui::Window::new("Running")
@@ -85,18 +95,36 @@ async fn main() {
                 .anchor(egui::Align2::LEFT_TOP, [0.0, settings_height])
                 .resizable(false)
                 .show(egui_ctx, |ui| {
-                    if DEBUG {
-                        ui.label(format!("Width: {width}"));
-                        ui.label(format!("Width Adj: {width_adj}"));
-                        ui.label(format!("Height: {height}"));
-                        ui.label(format!("Square Size: {square_size}"));
-
-                        ui.label(format!("Window Size: {:?}", ui.available_size()));
-                        ui.label(format!("Settings Height: {settings_height}"));
-                        ui.add(egui::Separator::default());
+                    if current_turn {
+                        ui.label("Current Turn: Player 2");
+                    } else {
+                        ui.label("Current Turn: Player 1");
                     }
+
+                    ui.separator();
+
+                    ui.centered_and_justified(|ui| {
+                        if ui
+                            .add_enabled(running, egui::Button::new("End Game"))
+                            .clicked()
+                        {
+                            running = false;
+                        }
+                    });
                 });
         });
+
+        if !current_turn {
+            // Player 1
+            match player_one {
+                Agent::Player => {}
+            };
+        } else {
+            // Player 2
+            match player_two {
+                Agent::Player => {}
+            };
+        }
 
         board.draw();
 

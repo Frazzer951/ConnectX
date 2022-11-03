@@ -40,6 +40,10 @@ impl Board {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.board = vec![vec![Pieces::Empty; self.cols]; self.rows]
+    }
+
     pub fn place(&mut self, col: usize, piece: Pieces) {
         for row in (0..self.rows).rev() {
             if self.board[row][col] == Pieces::Empty {
