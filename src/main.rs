@@ -124,25 +124,33 @@ async fn main() {
 
         board.draw();
 
-        if !current_turn {
-            // Player 1
-            let chosen_move = match player_one {
-                Agent::Player => player_turn(&board, current_turn),
-            };
-            if chosen_move.is_some() {
-                selected_move = chosen_move;
+        if running {
+            if !current_turn {
+                // Player 1
+                let chosen_move = match player_one {
+                    Agent::Player => player_turn(&board, current_turn),
+                };
+                if let Some(col) = chosen_move {
+                    selected_move = chosen_move;
 
+                    if board.place(col, Pieces::P1) {
+                        current_turn = !current_turn;
+                    }
+                };
+            } else {
+                // Player 2
+                let chosen_move = match player_two {
+                    Agent::Player => player_turn(&board, current_turn),
+                };
+                if let Some(col) = chosen_move {
+                    selected_move = chosen_move;
 
+                    if board.place(col, Pieces::P2) {
+                        current_turn = !current_turn;
+                    }
+                };
             };
-        } else {
-            // Player 2
-            let chosen_move = match player_two {
-                Agent::Player => player_turn(&board, current_turn),
-            };
-            if chosen_move.is_some() {
-                selected_move = chosen_move;
-            };
-        };
+        }
 
         egui_macroquad::draw();
 

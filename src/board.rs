@@ -49,13 +49,14 @@ impl Board {
         self.board = vec![vec![Pieces::Empty; self.cols]; self.rows]
     }
 
-    pub fn place(&mut self, col: usize, piece: Pieces) {
+    pub fn place(&mut self, col: usize, piece: Pieces) -> bool {
         for row in (0..self.rows).rev() {
             if self.board[row][col] == Pieces::Empty {
                 self.board[row][col] = piece;
-                return;
+                return true;
             }
         }
+        false
     }
 
     pub fn mouse_hover(&self, psn: (f32, f32), player: bool) -> Option<usize> {
