@@ -2,8 +2,8 @@ mod agent;
 mod board;
 mod ui;
 
-use agent::{player_turn, Agent};
-use board::{Board, GameState, Pieces};
+use agent::{compute_turn, Agent};
+use board::{Board, GameState};
 use macroquad::prelude::*;
 
 const DEBUG: bool = true;
@@ -12,6 +12,20 @@ const WINDOW_WIDTH: f32 = 225.0;
 
 const MAX_ROW: usize = 500;
 const MAX_COL: usize = 500;
+
+pub enum Turn {
+    Player1,
+    Player2,
+}
+
+impl Turn {
+    fn next(&mut self) {
+        match self {
+            Turn::Player1 => *self = Turn::Player2,
+            Turn::Player2 => *self = Turn::Player1,
+        }
+    }
+}
 
 fn window_conf() -> Conf {
     Conf {
@@ -28,16 +42,11 @@ async fn main() {
     let mut x_val: usize = 4;
     let mut player_one = Agent::Player;
     let mut player_two = Agent::Player;
-
     let mut board = Board::new(rows, cols);
     let mut running: bool = false;
-    let mut current_turn: bool = false;
+    let mut current_turn: Turn = Turn::Player1;
     let mut gamestate = GameState::OnGoing;
-
-    let mut selected_move: Option<usize> = None;
-
-    board.place(0, Pieces::P1);
-    board.place(0, Pieces::P2);
+    let mut selected_move: usize = 0;
 
     loop {
         let width: f32 = screen_width();
@@ -87,7 +96,7 @@ async fn main() {
                     ui.centered_and_justified(|ui| {
                         if ui.button("Start").clicked() {
                             running = true;
-                            current_turn = false;
+                            current_turn = Turn::Player1;
                             board.reset();
                         }
                     });
@@ -104,11 +113,10 @@ async fn main() {
                         ui.separator();
                     }
 
-                    if current_turn {
-                        ui.label("Current Turn: Player 2");
-                    } else {
-                        ui.label("Current Turn: Player 1");
-                    }
+                    match current_turn {
+                        Turn::Player1 => ui.label("Current Turn: Player 1"),
+                        Turn::Player2 => ui.label("Current Turn: Player 2"),
+                    };
 
                     ui.label(format!("GameState: {gamestate:?}"));
 
@@ -128,31 +136,18 @@ async fn main() {
         board.draw();
 
         if running {
-            if !current_turn {
-                // Player 1
-                let chosen_move = match player_one {
-                    Agent::Player => player_turn(&board, current_turn),
-                };
-                if let Some(col) = chosen_move {
-                    selected_move = chosen_move;
-
-                    if board.place(col, Pieces::P1) {
-                        current_turn = !current_turn;
+            match current_turn {
+                Turn::Player1 => {
+                    if let Some(col) = compute_turn(&mut current_turn, &player_one, &mut board) {
+                        selected_move = col;
                     }
-                };
-            } else {
-                // Player 2
-                let chosen_move = match player_two {
-                    Agent::Player => player_turn(&board, current_turn),
-                };
-                if let Some(col) = chosen_move {
-                    selected_move = chosen_move;
-
-                    if board.place(col, Pieces::P2) {
-                        current_turn = !current_turn;
+                }
+                Turn::Player2 => {
+                    if let Some(col) = compute_turn(&mut current_turn, &player_two, &mut board) {
+                        selected_move = col;
                     }
-                };
-            };
+                }
+            }
 
             gamestate = board.game_state();
 

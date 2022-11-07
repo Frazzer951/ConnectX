@@ -1,5 +1,7 @@
 use macroquad::prelude::*;
 
+use crate::Turn;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Pieces {
     P1,
@@ -69,17 +71,21 @@ impl Board {
         self.board = vec![vec![Pieces::Empty; self.cols]; self.rows]
     }
 
-    pub fn place(&mut self, col: usize, piece: Pieces) -> bool {
+    pub fn place(&mut self, col: usize, turn: &Turn) -> bool {
         for row in (0..self.rows).rev() {
             if self.board[row][col] == Pieces::Empty {
-                self.board[row][col] = piece;
+                self.board[row][col] = match turn {
+                    Turn::Player1 => Pieces::P1,
+                    Turn::Player2 => Pieces::P2,
+                };
+
                 return true;
             }
         }
         false
     }
 
-    pub fn mouse_hover(&self, psn: (f32, f32), player: bool) -> Option<usize> {
+    pub fn mouse_hover(&self, psn: (f32, f32), turn: &Turn) -> Option<usize> {
         let x = psn.0 - self.left_buffer;
         if x < 0.0 || x > self.cols as f32 * self.piece_size {
             return None;
@@ -89,10 +95,9 @@ impl Board {
 
         let x_pos = self.left_buffer + col as f32 * self.piece_size;
         let height = self.rows as f32 * self.piece_size;
-        let color = if player {
-            P2_COLOR_TRANS
-        } else {
-            P1_COLOR_TRANS
+        let color = match turn {
+            Turn::Player1 => P1_COLOR_TRANS,
+            Turn::Player2 => P2_COLOR_TRANS,
         };
 
         draw_rectangle(x_pos, 0.0, self.piece_size, height, color);
