@@ -7,9 +7,10 @@ use board::{Board, GameState};
 use macroquad::prelude::*;
 
 const DEBUG: bool = true;
+
+// Game Constants
 const LEFT_BUFFER: f32 = 250.0;
 const WINDOW_WIDTH: f32 = 225.0;
-
 const MAX_ROW: usize = 500;
 const MAX_COL: usize = 500;
 
@@ -37,29 +38,38 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
+    // Game Settings
     let mut rows: usize = 6;
     let mut cols: usize = 7;
     let mut x_val: usize = 4;
     let mut player_one = Agent::Player;
     let mut player_two = Agent::Player;
+
+    // Game Variables
     let mut board = Board::new(rows, cols);
-    let mut running: bool = false;
     let mut current_turn: Turn = Turn::Player1;
+    let mut running: bool = false;
     let mut gamestate = GameState::OnGoing;
+
+    // Debug Info
     let mut selected_move: usize = 0;
 
     loop {
+        // Calculate Square Size for rendering
         let width: f32 = screen_width();
         let width_adj: f32 = width - LEFT_BUFFER;
         let height: f32 = screen_height();
         let square_size = (width_adj / cols as f32).min(height / rows as f32);
 
+        // Calculate limit for the maximum X value
         let max_x = rows.min(cols);
 
+        // Resize the board if needed
         board.verify(rows, cols, x_val, LEFT_BUFFER, square_size);
 
         clear_background(WHITE);
 
+        // EGUI
         egui_macroquad::ui(|egui_ctx| {
             let mut settings_height = 45.0;
 
@@ -135,6 +145,7 @@ async fn main() {
 
         board.draw();
 
+        // Calculate turns
         if running {
             match current_turn {
                 Turn::Player1 => {
