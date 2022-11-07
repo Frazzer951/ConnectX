@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::Turn;
+use crate::{LEFT_BUFFER, Turn};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Pieces {
@@ -22,13 +22,12 @@ const P1_COLOR_TRANS: Color = Color::new(0.90, 0.16, 0.22, 0.50);
 const P2_COLOR: Color = Color::new(0.99, 0.98, 0.00, 1.00);
 const P2_COLOR_TRANS: Color = Color::new(0.99, 0.98, 0.00, 0.50);
 
+#[derive(Debug, Clone)]
 pub struct Board {
     rows: usize,
     cols: usize,
     x_to_win: usize,
     board: Vec<Vec<Pieces>>,
-    left_buffer: f32,
-    piece_size: f32,
 }
 
 impl Board {
@@ -38,19 +37,10 @@ impl Board {
             cols,
             x_to_win: 0,
             board: vec![vec![Pieces::Empty; cols]; rows],
-            left_buffer: 0.0,
-            piece_size: 0.0,
         }
     }
 
-    pub fn verify(
-        &mut self,
-        rows: usize,
-        cols: usize,
-        x_to_win: usize,
-        left_buffer: f32,
-        piece_size: f32,
-    ) {
+    pub fn verify(&mut self, rows: usize, cols: usize, x_to_win: usize) {
         if self.rows != rows || self.cols != cols {
             self.rows = rows;
             self.cols = cols;
@@ -58,12 +48,6 @@ impl Board {
         }
         if self.x_to_win != x_to_win {
             self.x_to_win = x_to_win;
-        }
-        if self.left_buffer != left_buffer {
-            self.left_buffer = left_buffer;
-        }
-        if self.piece_size != piece_size {
-            self.piece_size = piece_size;
         }
     }
 
@@ -85,39 +69,44 @@ impl Board {
         false
     }
 
-    pub fn mouse_hover(&self, psn: (f32, f32), turn: &Turn) -> Option<usize> {
-        let x = psn.0 - self.left_buffer;
-        if x < 0.0 || x > self.cols as f32 * self.piece_size {
+    pub fn mouse_hover(
+        &self,
+        piece_size: f32,
+        psn: (f32, f32),
+        turn: &Turn,
+    ) -> Option<usize> {
+        let x = psn.0 - LEFT_BUFFER;
+        if x < 0.0 || x > self.cols as f32 * piece_size {
             return None;
         }
 
-        let col = (x / self.piece_size) as usize;
+        let col = (x / piece_size) as usize;
 
-        let x_pos = self.left_buffer + col as f32 * self.piece_size;
-        let height = self.rows as f32 * self.piece_size;
+        let x_pos = LEFT_BUFFER + col as f32 * piece_size;
+        let height = self.rows as f32 * piece_size;
         let color = match turn {
             Turn::Player1 => P1_COLOR_TRANS,
             Turn::Player2 => P2_COLOR_TRANS,
         };
 
-        draw_rectangle(x_pos, 0.0, self.piece_size, height, color);
+        draw_rectangle(x_pos, 0.0, piece_size, height, color);
 
         Some(col)
     }
 
-    pub fn draw(&self) {
+    pub fn draw(&self, piece_size: f32) {
         for i in 0..self.rows {
             for j in 0..self.cols {
-                let mut x = self.left_buffer + j as f32 * self.piece_size;
-                let mut y = i as f32 * self.piece_size;
-                draw_rectangle(x, y, self.piece_size - 1.0, self.piece_size - 1.0, GRAY);
+                let mut x = LEFT_BUFFER + j as f32 * piece_size;
+                let mut y = i as f32 * piece_size;
+                draw_rectangle(x, y, piece_size - 1.0, piece_size - 1.0, GRAY);
 
-                x += self.piece_size / 2.0;
-                y += self.piece_size / 2.0;
+                x += piece_size / 2.0;
+                y += piece_size / 2.0;
                 match self.board[i][j] {
-                    Pieces::P1 => draw_circle(x, y, self.piece_size / 2.5, P1_COLOR),
-                    Pieces::P2 => draw_circle(x, y, self.piece_size / 2.5, P2_COLOR),
-                    Pieces::Empty => draw_circle(x, y, self.piece_size / 2.5, WHITE),
+                    Pieces::P1 => draw_circle(x, y, piece_size / 2.5, P1_COLOR),
+                    Pieces::P2 => draw_circle(x, y, piece_size / 2.5, P2_COLOR),
+                    Pieces::Empty => draw_circle(x, y, piece_size / 2.5, WHITE),
                 }
             }
         }
@@ -134,6 +123,12 @@ impl Board {
 
         moves
     }
+
+    //pub fn result(&self, col: usize, turn: &Turn) -> Self {
+    //    let mut new_board = self.clone();
+    //    new_board.place(col, turn);
+    //    new_board
+    //}
 
     pub fn game_state(&self) -> GameState {
         let mut full = true;

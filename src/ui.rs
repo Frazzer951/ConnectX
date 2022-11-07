@@ -18,6 +18,7 @@ pub fn agent_selector(ui: &mut egui::Ui, text: &str, agent: &mut Agent) {
             .show_ui(&mut columns[1], |ui| {
                 ui.selectable_value(agent, Agent::Player, "Player");
                 ui.selectable_value(agent, Agent::Random, "Random");
+                ui.selectable_value(agent, Agent::AlphaBeta, "AlphaBeta");
             });
     });
 }

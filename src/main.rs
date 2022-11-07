@@ -1,10 +1,11 @@
+use macroquad::prelude::*;
+
+use agent::{Agent, compute_turn};
+use board::{Board, GameState};
+
 mod agent;
 mod board;
 mod ui;
-
-use agent::{compute_turn, Agent};
-use board::{Board, GameState};
-use macroquad::prelude::*;
 
 const DEBUG: bool = true;
 
@@ -21,10 +22,10 @@ pub enum Turn {
 }
 
 impl Turn {
-    fn next(&mut self) {
+    fn next(&self) -> Self {
         match self {
-            Turn::Player1 => *self = Turn::Player2,
-            Turn::Player2 => *self = Turn::Player1,
+            Turn::Player1 => Turn::Player2,
+            Turn::Player2 => Turn::Player1,
         }
     }
 }
@@ -68,7 +69,7 @@ async fn main() {
         let max_x = rows.min(cols);
 
         // Resize the board if needed
-        board.verify(rows, cols, x_val, LEFT_BUFFER, square_size);
+        board.verify(rows, cols, x_val);
 
         clear_background(WHITE);
 
@@ -147,25 +148,20 @@ async fn main() {
                 });
         });
 
-        board.draw();
+        board.draw(square_size);
 
         // Calculate turns
         if running {
             if get_time() - time_counter >= sleep_time {
                 let start_turn = current_turn;
-                match current_turn {
-                    Turn::Player1 => {
-                        if let Some(col) = compute_turn(&mut current_turn, &player_one, &mut board)
-                        {
-                            selected_move = col;
-                        }
-                    }
-                    Turn::Player2 => {
-                        if let Some(col) = compute_turn(&mut current_turn, &player_two, &mut board)
-                        {
-                            selected_move = col;
-                        }
-                    }
+                let cur_agent = match current_turn {
+                    Turn::Player1 => &player_one,
+                    Turn::Player2 => &player_two,
+                };
+                if let Some(col) =
+                compute_turn(&mut current_turn, cur_agent, &mut board, square_size)
+                {
+                    selected_move = col;
                 }
 
                 if current_turn != start_turn {
