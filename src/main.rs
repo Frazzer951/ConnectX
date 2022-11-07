@@ -14,6 +14,7 @@ const WINDOW_WIDTH: f32 = 225.0;
 const MAX_ROW: usize = 500;
 const MAX_COL: usize = 500;
 
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Turn {
     Player1,
     Player2,
@@ -50,6 +51,8 @@ async fn main() {
     let mut current_turn: Turn = Turn::Player1;
     let mut running: bool = false;
     let mut gamestate = GameState::OnGoing;
+    let mut sleep_time: f64 = 0.0;
+    let mut time_counter: f64 = get_time();
 
     // Debug Info
     let mut selected_move: usize = 0;
@@ -97,6 +100,7 @@ async fn main() {
                     ui::number_drag(ui, &mut rows, "Rows:", 1..=MAX_ROW);
                     ui::number_drag(ui, &mut cols, "Cols:", 1..=MAX_COL);
                     ui::number_drag(ui, &mut x_val, "X Val:", 1..=max_x);
+                    ui.add(egui::Slider::new(&mut sleep_time, 0.0..=5.0).text("Sleep"));
 
                     ui::agent_selector(ui, "Player 1", &mut player_one);
                     ui::agent_selector(ui, "Player 2", &mut player_two);
@@ -147,16 +151,25 @@ async fn main() {
 
         // Calculate turns
         if running {
-            match current_turn {
-                Turn::Player1 => {
-                    if let Some(col) = compute_turn(&mut current_turn, &player_one, &mut board) {
-                        selected_move = col;
+            if get_time() - time_counter >= sleep_time {
+                let start_turn = current_turn;
+                match current_turn {
+                    Turn::Player1 => {
+                        if let Some(col) = compute_turn(&mut current_turn, &player_one, &mut board)
+                        {
+                            selected_move = col;
+                        }
+                    }
+                    Turn::Player2 => {
+                        if let Some(col) = compute_turn(&mut current_turn, &player_two, &mut board)
+                        {
+                            selected_move = col;
+                        }
                     }
                 }
-                Turn::Player2 => {
-                    if let Some(col) = compute_turn(&mut current_turn, &player_two, &mut board) {
-                        selected_move = col;
-                    }
+
+                if current_turn != start_turn {
+                    time_counter = get_time();
                 }
             }
 
