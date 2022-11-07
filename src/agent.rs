@@ -1,5 +1,5 @@
 use crate::{board::Board, Turn};
-use macroquad::prelude::*;
+use macroquad::{prelude::*, rand::ChooseRandom};
 
 #[derive(PartialEq, Debug)]
 pub enum Agent {
@@ -10,7 +10,7 @@ pub enum Agent {
 pub fn compute_turn(current_turn: &mut Turn, agent: &Agent, board: &mut Board) -> Option<usize> {
     let chosen_move = match agent {
         Agent::Player => player_turn(board, current_turn),
-        Agent::Random => random_turn(board, current_turn),
+        Agent::Random => random_turn(board),
     };
     if let Some(col) = chosen_move {
         if board.place(col, current_turn) {
@@ -33,6 +33,12 @@ pub fn player_turn(board: &Board, turn: &Turn) -> Option<usize> {
     }
 }
 
-pub fn random_turn(_board: &Board, _player: &Turn) -> Option<usize> {
-    None
+pub fn random_turn(board: &Board) -> Option<usize> {
+    let moves = board.moves();
+
+    if !moves.is_empty() {
+        moves.choose().cloned()
+    } else {
+        None
+    }
 }

@@ -123,6 +123,18 @@ impl Board {
         }
     }
 
+    pub fn moves(&self) -> Vec<usize> {
+        let mut moves = vec![];
+
+        for col in 0..self.cols {
+            if self.board[0][col] == Pieces::Empty {
+                moves.push(col);
+            }
+        }
+
+        moves
+    }
+
     pub fn game_state(&self) -> GameState {
         let mut full = true;
 
