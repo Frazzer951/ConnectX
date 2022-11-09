@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use crate::{LEFT_BUFFER, Turn};
+use crate::{Turn, LEFT_BUFFER};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Pieces {
@@ -9,7 +9,7 @@ pub enum Pieces {
     Empty,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum GameState {
     OnGoing,
     P1Win,
@@ -69,12 +69,7 @@ impl Board {
         false
     }
 
-    pub fn mouse_hover(
-        &self,
-        piece_size: f32,
-        psn: (f32, f32),
-        turn: &Turn,
-    ) -> Option<usize> {
+    pub fn mouse_hover(&self, piece_size: f32, psn: (f32, f32), turn: &Turn) -> Option<usize> {
         let x = psn.0 - LEFT_BUFFER;
         if x < 0.0 || x > self.cols as f32 * piece_size {
             return None;
@@ -124,11 +119,11 @@ impl Board {
         moves
     }
 
-    //pub fn result(&self, col: usize, turn: &Turn) -> Self {
-    //    let mut new_board = self.clone();
-    //    new_board.place(col, turn);
-    //    new_board
-    //}
+    pub fn result(&self, col: usize, turn: &Turn) -> Self {
+        let mut new_board = self.clone();
+        new_board.place(col, turn);
+        new_board
+    }
 
     pub fn game_state(&self) -> GameState {
         let mut full = true;
@@ -234,4 +229,100 @@ impl Board {
         // Game is still going
         GameState::OnGoing
     }
+
+    /// Code modified from https://github.com/KeithGalli/Connect4-Python
+    pub fn score_position(&self, turn: &Turn) -> i32 {
+        let mut score: i32 = 0;
+
+        let cur_piece = match turn {
+            Turn::Player1 => Pieces::P1,
+            Turn::Player2 => Pieces::P2,
+        };
+
+        let x_m1 = self.x_to_win - 1;
+
+        // Score center column
+        let center_count = self
+            .board
+            .iter()
+            .map(|s| s.get(self.cols / 2).unwrap())
+            .filter(|&p| *p == cur_piece)
+            .count() as i32;
+        score += center_count * 3;
+
+        // Score Horizontal
+        for r in 0..self.rows {
+            let row_array = &self.board[r];
+            for c in 0..(self.cols - x_m1) {
+                let window = &row_array[c..c + self.x_to_win];
+                score += evaluate_window(window, cur_piece, self.x_to_win);
+            }
+        }
+
+        // Score Vertical
+        for c in 0..self.cols {
+            let col_array = self
+                .board
+                .iter()
+                .map(|s| *s.get(c).unwrap())
+                .collect::<Vec<_>>();
+            for r in 0..(self.rows - x_m1) {
+                let window = &col_array[r..r + self.x_to_win];
+                score += evaluate_window(window, cur_piece, self.x_to_win);
+            }
+        }
+
+        // Score Diagonals
+        // Negative Diagonal
+        for r in 0..(self.rows - x_m1) {
+            for c in 0..(self.cols - x_m1) {
+                let mut window: Vec<Pieces> = vec![];
+                for i in 0..self.x_to_win {
+                    window.push(self.board[r + i][c + i]);
+                }
+                score += evaluate_window(&window, cur_piece, self.x_to_win);
+            }
+        }
+
+        // Positive Diagonal
+        for r in 0..(self.rows - x_m1) {
+            for c in 0..(self.cols - x_m1) {
+                let mut window: Vec<Pieces> = vec![];
+                for i in 0..self.x_to_win {
+                    window.push(self.board[r + x_m1 - i][c + i]);
+                }
+                score += evaluate_window(&window, cur_piece, self.x_to_win);
+            }
+        }
+
+        score
+    }
+}
+
+/// Code modified from https://github.com/KeithGalli/Connect4-Python
+fn evaluate_window(window: &[Pieces], piece: Pieces, x: usize) -> i32 {
+    let mut score = 0;
+
+    let opp_piece = match piece {
+        Pieces::P1 => Pieces::P2,
+        Pieces::P2 => Pieces::P1,
+        Pieces::Empty => Pieces::Empty,
+    };
+
+    let piece_count = window.iter().filter(|&p| *p == piece).count();
+    let opp_count = window.iter().filter(|&p| *p == opp_piece).count();
+
+    if opp_count == 0 {
+        if piece_count == x {
+            score += 100;
+        } else if piece_count >= x / 2 {
+            score += 5;
+        } else if piece_count > 1 {
+            score += 2;
+        }
+    } else if piece_count == 0 && opp_count >= (0.75 * x as f32) as usize {
+        score -= 4;
+    }
+
+    score
 }

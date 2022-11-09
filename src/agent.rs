@@ -1,6 +1,9 @@
 use macroquad::{prelude::*, rand::ChooseRandom};
 
-use crate::{board::Board, Turn};
+use crate::{
+    board::{Board, GameState},
+    Turn,
+};
 
 #[derive(PartialEq, Debug)]
 pub enum Agent {
@@ -51,6 +54,79 @@ pub fn random_turn(board: &Board) -> Option<usize> {
     }
 }
 
-pub fn alpha_beta_turn(_board: &Board, _turn: &Turn) -> Option<usize> {
-    None
+pub fn alpha_beta_turn(board: &Board, turn: &Turn) -> Option<usize> {
+    let (col, _) = minimax(board.clone(), 5, i32::MIN, i32::MAX, true, turn);
+    col
+}
+
+fn minimax(
+    board: Board,
+    depth: u32,
+    mut alpha: i32,
+    mut beta: i32,
+    maximizing_player: bool,
+    turn: &Turn,
+) -> (Option<usize>, i32) {
+    if depth == 0 {
+        return (None, board.score_position(turn));
+    }
+
+    let board_state = board.game_state();
+
+    if board_state != GameState::OnGoing {
+        if board_state == GameState::P1Win {
+            return match turn {
+                Turn::Player1 => (None, i32::MAX),
+                Turn::Player2 => (None, i32::MIN),
+            };
+        } else if board_state == GameState::P2Win {
+            return match turn {
+                Turn::Player1 => (None, i32::MIN),
+                Turn::Player2 => (None, i32::MAX),
+            };
+        } else {
+            return (None, 0);
+        }
+    }
+
+    let valid_locations = board.moves();
+
+    if valid_locations.is_empty() {
+        // We should never get here but its just in case
+        return (None, 0);
+    }
+
+    if maximizing_player {
+        let mut value = i32::MIN;
+        let mut column = *valid_locations.choose().unwrap();
+        for col in valid_locations {
+            let b_copy = board.result(col, turn);
+            let (_, new_score) = minimax(b_copy, depth - 1, alpha, beta, false, turn);
+            if new_score > value {
+                value = new_score;
+                column = col;
+            }
+            alpha = alpha.max(value);
+            if alpha >= beta {
+                break;
+            }
+        }
+        (Some(column), value)
+    } else {
+        let mut value = i32::MAX;
+        let mut column = *valid_locations.choose().unwrap();
+        for col in valid_locations {
+            let b_copy = board.result(col, &turn.next());
+            let (_, new_score) = minimax(b_copy, depth - 1, alpha, beta, true, turn);
+            if new_score < value {
+                value = new_score;
+                column = col;
+            }
+            beta = beta.min(value);
+            if alpha >= beta {
+                break;
+            }
+        }
+        (Some(column), value)
+    }
 }
