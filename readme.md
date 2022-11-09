@@ -4,8 +4,9 @@ A connect-4 variant where the board can be any size and the amount you need in a
 
 ## TODO
 
-- Implement more agents
 - Make it look good
+- Code Cleanup / Optimization
+- Possibly Add more Agents
 
 ## Possible things to look at
 - [ndarray](https://docs.rs/ndarray/latest/ndarray/) for game board
