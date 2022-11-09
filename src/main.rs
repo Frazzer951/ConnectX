@@ -1,13 +1,13 @@
 use macroquad::prelude::*;
 
-use agent::{Agent, compute_turn};
+use agent::{compute_turn, Agent};
 use board::{Board, GameState};
 
 mod agent;
 mod board;
 mod ui;
 
-const DEBUG: bool = true;
+const DEBUG: bool = false;
 
 // Game Constants
 const LEFT_BUFFER: f32 = 250.0;
@@ -159,7 +159,7 @@ async fn main() {
                     Turn::Player2 => &player_two,
                 };
                 if let Some(col) =
-                compute_turn(&mut current_turn, cur_agent, &mut board, square_size)
+                    compute_turn(&mut current_turn, cur_agent, &mut board, square_size)
                 {
                     selected_move = col;
                 }
