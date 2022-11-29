@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use ndarray::prelude::*;
 
 use crate::{Turn, LEFT_BUFFER};
 
@@ -27,7 +28,7 @@ pub struct Board {
     rows: usize,
     cols: usize,
     x_to_win: usize,
-    board: Vec<Vec<Pieces>>,
+    board: Array1<Pieces>,
 }
 
 impl Board {
@@ -36,7 +37,7 @@ impl Board {
             rows,
             cols,
             x_to_win: 0,
-            board: vec![vec![Pieces::Empty; cols]; rows],
+            board: Array1::from_elem(rows * cols, Pieces::Empty),
         }
     }
 
@@ -44,7 +45,7 @@ impl Board {
         if self.rows != rows || self.cols != cols {
             self.rows = rows;
             self.cols = cols;
-            self.board = vec![vec![Pieces::Empty; cols]; rows]
+            self.board = Array1::from_elem(rows * cols, Pieces::Empty);
         }
         if self.x_to_win != x_to_win {
             self.x_to_win = x_to_win;
@@ -52,16 +53,28 @@ impl Board {
     }
 
     pub fn reset(&mut self) {
-        self.board = vec![vec![Pieces::Empty; self.cols]; self.rows]
+        self.board = Array1::from_elem(self.rows * self.cols, Pieces::Empty)
+    }
+
+    pub fn piece_at(&self, row: usize, col: usize) -> Pieces {
+        self.board[[row * self.cols + col]]
+    }
+
+    pub fn set_piece(&mut self, row: usize, col: usize, piece: Pieces) {
+        self.board[[row * self.cols + col]] = piece
     }
 
     pub fn place(&mut self, col: usize, turn: &Turn) -> bool {
         for row in (0..self.rows).rev() {
-            if self.board[row][col] == Pieces::Empty {
-                self.board[row][col] = match turn {
-                    Turn::Player1 => Pieces::P1,
-                    Turn::Player2 => Pieces::P2,
-                };
+            if self.piece_at(row, col) == Pieces::Empty {
+                self.set_piece(
+                    row,
+                    col,
+                    match turn {
+                        Turn::Player1 => Pieces::P1,
+                        Turn::Player2 => Pieces::P2,
+                    },
+                );
 
                 return true;
             }
@@ -98,7 +111,7 @@ impl Board {
 
                 x += piece_size / 2.0;
                 y += piece_size / 2.0;
-                match self.board[i][j] {
+                match self.piece_at(i, j) {
                     Pieces::P1 => draw_circle(x, y, piece_size / 2.5, P1_COLOR),
                     Pieces::P2 => draw_circle(x, y, piece_size / 2.5, P2_COLOR),
                     Pieces::Empty => draw_circle(x, y, piece_size / 2.5, WHITE),
@@ -111,7 +124,7 @@ impl Board {
         let mut moves = vec![];
 
         for col in 0..self.cols {
-            if self.board[0][col] == Pieces::Empty {
+            if self.piece_at(0, col) == Pieces::Empty {
                 moves.push(col);
             }
         }
@@ -130,7 +143,7 @@ impl Board {
 
         // Check if top row is filled
         for col in 0..self.cols {
-            if self.board[0][col] == Pieces::Empty {
+            if self.piece_at(0, col) == Pieces::Empty {
                 full = false;
                 break;
             }
@@ -139,7 +152,7 @@ impl Board {
         // Check all diagonal and cardinal direction
         for i in 0..self.rows {
             for j in 0..self.cols {
-                let cur_piece = self.board[i][j];
+                let cur_piece = self.piece_at(i, j);
                 if cur_piece == Pieces::Empty {
                     continue;
                 }
@@ -148,7 +161,7 @@ impl Board {
                 if j + self.x_to_win <= self.cols {
                     let mut count = 1;
                     for col in j + 1..self.cols {
-                        if self.board[i][col] == cur_piece {
+                        if self.piece_at(i, col) == cur_piece {
                             count += 1;
                         } else {
                             break;
@@ -167,7 +180,7 @@ impl Board {
                 if i + self.x_to_win <= self.rows {
                     let mut count = 1;
                     for row in i + 1..self.rows {
-                        if self.board[row][j] == cur_piece {
+                        if self.piece_at(row, j) == cur_piece {
                             count += 1;
                         } else {
                             break;
@@ -186,7 +199,7 @@ impl Board {
                 if i as i32 - self.x_to_win as i32 >= -1 && j + self.x_to_win <= self.cols {
                     let mut count = 1;
                     for offset in 1..self.x_to_win {
-                        if self.board[i - offset][j + offset] == cur_piece {
+                        if self.piece_at(i - offset, j + offset) == cur_piece {
                             count += 1;
                         } else {
                             break;
@@ -204,7 +217,7 @@ impl Board {
                 if i + self.x_to_win <= self.rows && j + self.x_to_win <= self.cols {
                     let mut count = 1;
                     for offset in 1..self.x_to_win {
-                        if self.board[i + offset][j + offset] == cur_piece {
+                        if self.piece_at(i + offset, j + offset) == cur_piece {
                             count += 1;
                         } else {
                             break;
@@ -244,31 +257,28 @@ impl Board {
         // Score center column
         let center_count = self
             .board
+            .slice(s![(self.cols / 2)..;self.cols])
             .iter()
-            .map(|s| s.get(self.cols / 2).unwrap())
             .filter(|&p| *p == cur_piece)
             .count() as i32;
         score += center_count * 3;
 
         // Score Horizontal
         for r in 0..self.rows {
-            let row_array = &self.board[r];
+            let r_num = r * self.cols;
+            let row_array = self.board.slice(s![r_num..(r_num + self.cols)]);
             for c in 0..(self.cols - x_m1) {
-                let window = &row_array[c..c + self.x_to_win];
-                score += evaluate_window(window, cur_piece, self.x_to_win);
+                let window = row_array.slice(s![c..c + self.x_to_win]);
+                score += evaluate_window(&window, cur_piece, self.x_to_win);
             }
         }
 
         // Score Vertical
         for c in 0..self.cols {
-            let col_array = self
-                .board
-                .iter()
-                .map(|s| *s.get(c).unwrap())
-                .collect::<Vec<_>>();
+            let col_array = self.board.slice(s![c..;self.cols]);
             for r in 0..(self.rows - x_m1) {
-                let window = &col_array[r..r + self.x_to_win];
-                score += evaluate_window(window, cur_piece, self.x_to_win);
+                let window = col_array.slice(s![r..r + self.x_to_win]);
+                score += evaluate_window(&window, cur_piece, self.x_to_win);
             }
         }
 
@@ -276,10 +286,11 @@ impl Board {
         // Negative Diagonal
         for r in 0..(self.rows - x_m1) {
             for c in 0..(self.cols - x_m1) {
-                let mut window: Vec<Pieces> = vec![];
-                for i in 0..self.x_to_win {
-                    window.push(self.board[r + i][c + i]);
-                }
+                let ip = r * self.cols + c;
+                let fp = (r + x_m1) * self.cols + (c + x_m1);
+                let ss = self.cols + 1;
+                let window = self.board.slice(s![ip..=fp;ss]);
+
                 score += evaluate_window(&window, cur_piece, self.x_to_win);
             }
         }
@@ -287,10 +298,11 @@ impl Board {
         // Positive Diagonal
         for r in 0..(self.rows - x_m1) {
             for c in 0..(self.cols - x_m1) {
-                let mut window: Vec<Pieces> = vec![];
-                for i in 0..self.x_to_win {
-                    window.push(self.board[r + x_m1 - i][c + i]);
-                }
+                let ip = r * self.cols + (c + x_m1);
+                let fp = (r + x_m1) * self.cols + c;
+                let ss = self.cols - 1;
+                let window = self.board.slice(s![ip..=fp;ss]);
+
                 score += evaluate_window(&window, cur_piece, self.x_to_win);
             }
         }
@@ -300,7 +312,7 @@ impl Board {
 }
 
 /// Code modified from https://github.com/KeithGalli/Connect4-Python
-fn evaluate_window(window: &[Pieces], piece: Pieces, x: usize) -> i32 {
+fn evaluate_window(window: &ArrayView1<Pieces>, piece: Pieces, x: usize) -> i32 {
     let mut score = 0;
 
     let opp_piece = match piece {
