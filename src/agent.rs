@@ -5,7 +5,7 @@ use crate::{
     Turn,
 };
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum Agent {
     Player,
     Random,
