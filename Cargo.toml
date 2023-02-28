@@ -7,6 +7,6 @@ version = "0.1.0"
 
 [dependencies]
 egui = "0.19"
-egui-macroquad = "0.12"
+egui-macroquad = "0.15"
 macroquad = "0.3"
 ndarray = "0.15"
